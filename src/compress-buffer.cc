@@ -218,9 +218,10 @@ namespace node_compress_buffer {
         }
 
         v8::Local<v8::Value> bufferIn = info[0];
+        v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
         if (info.Length() > 1) {
-            compressionLevel = info[1]->IntegerValue();
+            compressionLevel = info[1]->IntegerValue(ctx).FromJust();
         }
 
         size_t bytesIn = node::Buffer::Length(bufferIn);
@@ -259,23 +260,23 @@ namespace node_compress_buffer {
 
         v8::Local<v8::Object> result = Nan::New<v8::Object>();
 
-        result->Set(Nan::New(SYM_BODY), Nan::CopyBuffer(dataOut, bytesOut).ToLocalChecked());
+        result->Set(ctx, Nan::New(SYM_BODY), Nan::CopyBuffer(dataOut, bytesOut).ToLocalChecked());
 
-        result->Set(Nan::New(SYM_BOUNDARY), Nan::CopyBuffer(dataBoundary, bytesBoundary).ToLocalChecked());
+        result->Set(ctx, Nan::New(SYM_BOUNDARY), Nan::CopyBuffer(dataBoundary, bytesBoundary).ToLocalChecked());
 
         v8::Local<v8::Object> dataOffsets = Nan::New<v8::Object>();
-        dataOffsets->Set(Nan::New(SYM_LEFT), Nan::New<v8::Integer>(HEADER_SIZE));
-        dataOffsets->Set(Nan::New(SYM_RIGHT), Nan::New<v8::Integer>(HEADER_SIZE + dataLength));
-        dataOffsets->Set(Nan::New(SYM_LAST_BLOCK), Nan::New<v8::Integer>(lastBlockPosition));
+        dataOffsets->Set(ctx, Nan::New(SYM_LEFT), Nan::New<v8::Integer>(HEADER_SIZE));
+        dataOffsets->Set(ctx, Nan::New(SYM_RIGHT), Nan::New<v8::Integer>(HEADER_SIZE + dataLength));
+        dataOffsets->Set(ctx, Nan::New(SYM_LAST_BLOCK), Nan::New<v8::Integer>(lastBlockPosition));
 
         v8::Local<v8::Object> meta = Nan::New<v8::Object>();
-        meta->Set(Nan::New(SYM_OFFSETS), dataOffsets);
-        meta->Set(Nan::New(SYM_LENGTH), Nan::New<v8::Integer>(static_cast<uint32_t>(bytesIn)));
-        meta->Set(Nan::New(SYM_LAST_VALUE), Nan::New<v8::Integer>(lastBlockValue));
-        meta->Set(Nan::New(SYM_RAW_LENGTH), Nan::New<v8::Integer>(static_cast<uint32_t>(bytesOut - HEADER_SIZE - FOOTER_SIZE)));
-        meta->Set(Nan::New(SYM_CRC), Nan::CopyBuffer(dataOut + (bytesOut - FOOTER_SIZE), 4).ToLocalChecked());
+        meta->Set(ctx, Nan::New(SYM_OFFSETS), dataOffsets);
+        meta->Set(ctx, Nan::New(SYM_LENGTH), Nan::New<v8::Integer>(static_cast<uint32_t>(bytesIn)));
+        meta->Set(ctx, Nan::New(SYM_LAST_VALUE), Nan::New<v8::Integer>(lastBlockValue));
+        meta->Set(ctx, Nan::New(SYM_RAW_LENGTH), Nan::New<v8::Integer>(static_cast<uint32_t>(bytesOut - HEADER_SIZE - FOOTER_SIZE)));
+        meta->Set(ctx, Nan::New(SYM_CRC), Nan::CopyBuffer(dataOut + (bytesOut - FOOTER_SIZE), 4).ToLocalChecked());
 
-        result->Set(Nan::New(SYM_META), meta);
+        result->Set(ctx, Nan::New(SYM_META), meta);
 
         free(dataOut);
         free(dataBoundary);
@@ -298,10 +299,11 @@ namespace node_compress_buffer {
             return;
         }
 
-        v8::Local<v8::Object> bufferIn = info[0]->ToObject();
+        v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
+        v8::Local<v8::Object> bufferIn = info[0]->ToObject(ctx).ToLocalChecked();
 
         if (info.Length() > 1) {
-            compressionLevel = info[1]->IntegerValue();
+            compressionLevel = info[1]->IntegerValue(ctx).FromJust();
         }
 
         const char *dataIn = node::Buffer::Data(bufferIn);
@@ -320,21 +322,22 @@ namespace node_compress_buffer {
             return;
         }
 
-        v8::Handle<v8::Value> b = Nan::CopyBuffer(dataOut, bytesOut).ToLocalChecked();
+        v8::Local<v8::Value> b = Nan::CopyBuffer(dataOut, bytesOut).ToLocalChecked();
         free(dataOut);
         info.GetReturnValue().Set(b);
     }
 
     static NAN_METHOD(estimate) {
         v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(info[0]);
+        v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
         int i = 0;
         int l = arr->Length();
         int sum = HEADER_SIZE + FOOTER_SIZE + ((l - 1) * SPACER_SIZE);
 
         for(; i < l; i++) {
-            v8::Local<v8::Object> obj = arr->Get(i)->ToObject();
+            v8::Local<v8::Object> obj = arr->Get(ctx, i).ToLocalChecked()->ToObject(ctx).ToLocalChecked();
 
-            if (!obj->Has(Nan::New(SYM_META))) {
+            if (!obj->Has(ctx, Nan::New(SYM_META)).FromJust()) {
                 char msg[40];
                 sprintf(msg, "ESTIMATE wrong object (no meta key) at: %d", i);
                 Nan::ThrowError(msg);
@@ -342,9 +345,9 @@ namespace node_compress_buffer {
                 return;
             }
 
-            v8::Local<v8::Object> meta = obj->Get(Nan::New(SYM_META))->ToObject();
+            v8::Local<v8::Object> meta = obj->Get(ctx, Nan::New(SYM_META)).ToLocalChecked()->ToObject(ctx).ToLocalChecked();
 
-            if (!meta->Has(Nan::New(SYM_RAW_LENGTH))) {
+            if (!meta->Has(ctx, Nan::New(SYM_RAW_LENGTH)).FromJust()) {
                 char msg[60];
                 sprintf(msg, "ESTIMATE wrong object (no rawLength key) at: %d", i);
                 Nan::ThrowError(msg);
@@ -352,7 +355,7 @@ namespace node_compress_buffer {
                 return;
             }
 
-            sum += meta->Get(Nan::New(SYM_RAW_LENGTH))->Uint32Value();
+            sum += meta->Get(ctx, Nan::New(SYM_RAW_LENGTH)).ToLocalChecked()->Uint32Value(ctx).FromJust();
         }
 
         info.GetReturnValue().Set(Nan::New<v8::Integer>(sum));
@@ -375,14 +378,15 @@ namespace node_compress_buffer {
         unsigned long tot = 0;
 
         v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(info[0]);
+        v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
         int l = arr->Length();
         int i = 0;
 
         for (; i < l; i++) {
-            v8::Local<v8::Object> obj = arr->Get(i)->ToObject();
+            v8::Local<v8::Object> obj = arr->Get(ctx, i).ToLocalChecked()->ToObject(ctx).ToLocalChecked();
 
-            if (!obj->Has(Nan::New(SYM_META))) {
+            if (!obj->Has(ctx, Nan::New(SYM_META)).FromJust()) {
                 char msg[40];
                 sprintf(msg, "CRC32 wrong object (no meta key) at: %d", i);
                 Nan::ThrowError(msg);
@@ -390,9 +394,9 @@ namespace node_compress_buffer {
                 return;
             }
 
-            v8::Local<v8::Object> meta = obj->Get(Nan::New(SYM_META))->ToObject();
+            v8::Local<v8::Object> meta = obj->Get(ctx, Nan::New(SYM_META)).ToLocalChecked()->ToObject(ctx).ToLocalChecked();
 
-            if (!meta->Has(Nan::New(SYM_CRC))) {
+            if (!meta->Has(ctx, Nan::New(SYM_CRC)).FromJust()) {
                 char msg[40];
                 sprintf(msg, "CRC32 wrong object (no crc key) at: %d", i);
                 Nan::ThrowError(msg);
@@ -400,7 +404,7 @@ namespace node_compress_buffer {
                 return;
             }
 
-            v8::Local<v8::Value> objCrc = meta->Get(Nan::New(SYM_CRC));
+            v8::Local<v8::Value> objCrc = meta->Get(ctx, Nan::New(SYM_CRC)).ToLocalChecked();
             if (!node::Buffer::HasInstance(objCrc)) {
                 char msg[40];
                 sprintf(msg, "CRC32 is not a buffer at: %d", i);
@@ -409,7 +413,7 @@ namespace node_compress_buffer {
                 return;
             }
 
-            v8::Local<v8::Object> bufCrc = objCrc->ToObject();
+            v8::Local<v8::Object> bufCrc = objCrc->ToObject(ctx).ToLocalChecked();
 
             if (node::Buffer::Length(bufCrc) != 4) {
                 char msg[40];
@@ -420,15 +424,15 @@ namespace node_compress_buffer {
             }
 
             unsigned long tmpCrc = reverseBytes((unsigned char *) node::Buffer::Data(bufCrc));
-            unsigned long tmpLen = meta->Get(Nan::New(SYM_LENGTH))->Uint32Value();
+            unsigned long tmpLen = meta->Get(ctx, Nan::New(SYM_LENGTH)).ToLocalChecked()->Uint32Value(ctx).FromJust();
 
             crc = crc32_combine(crc, tmpCrc, tmpLen);
             tot += tmpLen;
         }
 
         v8::Local<v8::Object> data = Nan::New<v8::Object>();
-        data->Set(Nan::New(SYM_CRC), Nan::CopyBuffer((char *) &crc, 4).ToLocalChecked());
-        data->Set(Nan::New(SYM_LENGTH), Nan::CopyBuffer((char *) &tot, 4).ToLocalChecked());
+        data->Set(ctx, Nan::New(SYM_CRC), Nan::CopyBuffer((char *) &crc, 4).ToLocalChecked());
+        data->Set(ctx, Nan::New(SYM_LENGTH), Nan::CopyBuffer((char *) &tot, 4).ToLocalChecked());
 
         info.GetReturnValue().Set(data);
     }
@@ -462,7 +466,7 @@ namespace node_compress_buffer {
             return;
         }
 
-        v8::Local<v8::Object> bufferIn = info[0]->ToObject();
+        v8::Local<v8::Object> bufferIn = info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
 
         strmUncompress.next_in = (Bytef*) node::Buffer::Data(bufferIn);
         strmUncompress.avail_in = node::Buffer::Length(bufferIn);
@@ -517,21 +521,23 @@ namespace node_compress_buffer {
             return;
         }
 
-        v8::Handle<v8::Value> b = Nan::CopyBuffer((char *)bufferOut, malloc_size).ToLocalChecked();
+        v8::Local<v8::Value> b = Nan::CopyBuffer((char *)bufferOut, malloc_size).ToLocalChecked();
         free(bufferOut);
         info.GetReturnValue().Set(b);
     }
 
-    void init(v8::Handle<v8::Object> target) {
+    void init(v8::Local<v8::Object> target) {
 
         tmpBody = (unsigned char *) malloc(CHUNK);
 
         const unsigned char header[] = {0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff};
 
-        v8::Handle<v8::Object> buffers = Nan::New<v8::Object>();
-        buffers->Set(Nan::New(SYM_HEADER), Nan::CopyBuffer(reinterpret_cast<const char*>(header), 10).ToLocalChecked());
+        v8::Local<v8::Object> buffers = Nan::New<v8::Object>();
+        v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
-        target->Set(Nan::New(SYM_BUFFERS), buffers);
+        buffers->Set(ctx, Nan::New(SYM_HEADER), Nan::CopyBuffer(reinterpret_cast<const char*>(header), 10).ToLocalChecked());
+
+        target->Set(ctx, Nan::New(SYM_BUFFERS), buffers);
 
         Nan::SetMethod(target, "compress", compress);
         Nan::SetMethod(target, "uncompress", uncompress);

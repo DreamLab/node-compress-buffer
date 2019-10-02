@@ -14,7 +14,7 @@ var loremIpsum="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
 
 exports['basic compress']= function(test) {
 	test.expect(2);
-	var uncompressed = new Buffer(loremIpsum);
+	var uncompressed = Buffer.from(loremIpsum);
 	var compressed = compress(uncompressed);
 	test.equal(compressed.length,282);
 	test.equal(md5(compressed), "6e31946d851b7cab51e058653a16b666");
@@ -23,7 +23,7 @@ exports['basic compress']= function(test) {
 
 exports['basic uncompress']= function(test) {
 	test.expect(2);
-	var uncompressed = new Buffer(loremIpsum);
+	var uncompressed = Buffer.from(loremIpsum);
 	var compressed = compress(uncompressed);
 	uncompressed = uncompress(compressed);
 	test.equal(uncompressed.length,loremIpsum.length);
@@ -60,7 +60,7 @@ exports['compress short']= function(test) {
 	test.expect(2);
 	var buffer, compressed;
 
-	buffer = new Buffer("too short");
+	buffer = Buffer.from("too short");
 	compressed = compress(buffer);
 	test.notEqual(compressed,buffer);
 	test.notEqual(compressed.length,buffer.length);
@@ -70,10 +70,10 @@ exports['compress short']= function(test) {
 
 exports['errors']= function(test) {
 	test.expect(2);
-	var compressed = compress(new Buffer(""));
+	var compressed = compress(Buffer.from(""));
 	test.ok(compressed.length>=0);
 	
-	var nothing = uncompress(new Buffer(" sfsdcfgdfgsdgfdsgdgdsgdfgsdfgsdfgdfgfsfd "));
+	var nothing = uncompress(Buffer.from(" sfsdcfgdfgsdgfdsgdgdsgdfgsdfgsdfgdfgfsfd "));
 	test.ok(nothing==null);
 	
 	test.done();
