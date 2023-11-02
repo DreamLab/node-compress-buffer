@@ -425,8 +425,7 @@ namespace node_compress_buffer {
 
             unsigned long tmpCrc = reverseBytes((unsigned char *) node::Buffer::Data(bufCrc));
             unsigned long tmpLen = meta->Get(ctx, Nan::New(SYM_LENGTH)).ToLocalChecked()->Uint32Value(ctx).FromJust();
-
-            crc = crc32_combine(crc, tmpCrc, tmpLen);
+            crc = crc32_combine64(crc, tmpCrc, tmpLen);
             tot += tmpLen;
         }
 
