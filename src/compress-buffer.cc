@@ -15,6 +15,14 @@
 #define WBITS 16+MAX_WBITS
 #define WBITS_RAW -15
 
+#ifdef Z_LARGE64 // zlib defines different functions depending on architecture.
+    #pragma message "Z_LARGE64 defined using crc32_combine64"
+    #define ZLIB_CRC32_COMBINE(crc1, crc2, len2) crc32_combine64((crc1), (crc2), (len2))
+#else
+    #define ZLIB_CRC32_COMBINE(crc1, crc2, len2) crc32_combine((crc1), (crc2), (len2))
+    #pragma message "Z_LARGE64 NOT defined using crc32_combine"
+#endif
+
 #define CHUNK 1024*100
 #define HEADER_SIZE 10
 #define FOOTER_SIZE 8
@@ -426,7 +434,8 @@ namespace node_compress_buffer {
             unsigned long tmpCrc = reverseBytes((unsigned char *) node::Buffer::Data(bufCrc));
             unsigned long tmpLen = meta->Get(ctx, Nan::New(SYM_LENGTH)).ToLocalChecked()->Uint32Value(ctx).FromJust();
 
-            crc = crc32_combine(crc, tmpCrc, tmpLen);
+            crc = ZLIB_CRC32_COMBINE(crc, tmpCrc, tmpLen);
+
             tot += tmpLen;
         }
 

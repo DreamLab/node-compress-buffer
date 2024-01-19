@@ -1,8 +1,8 @@
-util = require('util');
-fs = require('fs');
-crypto=require('crypto');
-compress = require('../index').compress;
-uncompress = require('../index').uncompress;
+const util = require('util');
+const fs = require('fs');
+const crypto = require('crypto');
+const compress = require('../index').compress;
+const uncompress = require('../index').uncompress;
 
 function md5(data) {
 	var md5=crypto.createHash('md5');
