@@ -37,6 +37,14 @@ Both functions could throw exceptions in the following cases:
 
 ## Installation
 
+This is a native addon built with <code>node-gyp</code>, which needs a C++ toolchain, Python 3 and the zlib development files:
+
+* Debian/Ubuntu: <code>sudo apt install build-essential zlib1g-dev</code>
+* Alpine: <code>apk add build-base python3 zlib-dev</code>
+* macOS: <code>xcode-select --install</code> (zlib is included)
+
+Then:
+
 	npm install compress-buffer
 
 or

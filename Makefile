@@ -11,7 +11,7 @@ compile: configure
 	node-gyp build
 
 test: build
-	@nodeunit $(TESTS)
+	@node --test $(TESTS)
 
 clean:
 	node-gyp clean
