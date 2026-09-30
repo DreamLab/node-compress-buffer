@@ -1,4 +1,4 @@
-4.0.1: Sep 30, 2026
+4.1.0: Sep 30, 2026
 * tests ported from deprecated nodeunit to built-in node:test (fixes 15 dev dependency vulnerabilities)
 * npm test rebuilds the native addon first and works on node 20, 22 and 24
 * basic compress test no longer fails on macOS (gzip header OS byte)
