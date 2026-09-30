@@ -19,10 +19,8 @@ test('basic compress', function() {
 	assert.equal(compressed.length,282);
 	// byte 9 of the gzip header is the OS id set by zlib: 19 on macOS, 3 on Unix
 	if (process.platform === 'darwin') {
-		assert.equal(compressed[9], 19);
 		assert.equal(md5(compressed), "9b53ffcad9b34e82188f1d68638b2893");
-	} else {
-		assert.equal(compressed[9], 3);
+	} else { // unix
 		assert.equal(md5(compressed), "6e31946d851b7cab51e058653a16b666");
 	}
 });
