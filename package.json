@@ -12,10 +12,10 @@
     "url": "http://github.com/egorfine/node-compress-buffer.git"
   },
   "main": "./index",
-  "devDependencies": {
-    "nodeunit": ">=0.5.4"
-  },
   "dependencies": {
     "nan": "2.x"
+  },
+  "scripts": {
+    "test": "node --test test/"
   }
 }

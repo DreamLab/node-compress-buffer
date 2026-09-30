@@ -1,4 +1,5 @@
-const util = require('util');
+const test = require('node:test');
+const assert = require('node:assert');
 const fs = require('fs');
 const crypto = require('crypto');
 const compress = require('../index').compress;
@@ -12,69 +13,55 @@ function md5(data) {
 
 var loremIpsum="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-exports['basic compress']= function(test) {
-	test.expect(2);
+test('basic compress', function() {
 	var uncompressed = Buffer.from(loremIpsum);
 	var compressed = compress(uncompressed);
-	test.equal(compressed.length,282);
-	test.equal(md5(compressed), "6e31946d851b7cab51e058653a16b666");
-	test.done();
-}
+	assert.equal(compressed.length,282);
+	// byte 9 of the gzip header is the OS id set by zlib; pin it to Unix (3) so the hash is platform independent
+	var normalized = Buffer.from(compressed);
+	normalized[9] = 3;
+	assert.equal(md5(normalized), "6e31946d851b7cab51e058653a16b666");
+});
 
-exports['basic uncompress']= function(test) {
-	test.expect(2);
+test('basic uncompress', function() {
 	var uncompressed = Buffer.from(loremIpsum);
 	var compressed = compress(uncompressed);
 	uncompressed = uncompress(compressed);
-	test.equal(uncompressed.length,loremIpsum.length);
-	test.equal(md5(uncompressed), "fa5c89f3c88b81bfd5e821b0316569af");
-	test.done();
-}
+	assert.equal(uncompressed.length,loremIpsum.length);
+	assert.equal(md5(uncompressed), "fa5c89f3c88b81bfd5e821b0316569af");
+});
 
-exports['compress with compression levels']= function(test) {
-	test.expect(1);
+test('compress with compression levels', function() {
 	var uncompressedBuffer = fs.readFileSync(__dirname+"/node-compress-buffer-test.js");
-	
+
 	var compressed1 = compress(uncompressedBuffer, 1);
 	var compressed9 = compress(uncompressedBuffer, 9);
-	test.ok(compressed1.length>compressed9.length);
+	assert.ok(compressed1.length>compressed9.length);
+});
 
-	test.done();
-}
-
-exports['string exceptions']= function(test) {
-	test.expect(2);
-
-	test.throws(function() {
+test('string exceptions', function() {
+	assert.throws(function() {
 		compress(loremIpsum);
 	});
 
-	test.throws(function() {
+	assert.throws(function() {
 		uncompress(loremIpsum);
 	});
+});
 
-	test.done();
-}
-
-exports['compress short']= function(test) {
-	test.expect(2);
+test('compress short', function() {
 	var buffer, compressed;
 
 	buffer = Buffer.from("too short");
 	compressed = compress(buffer);
-	test.notEqual(compressed,buffer);
-	test.notEqual(compressed.length,buffer.length);
+	assert.notEqual(compressed,buffer);
+	assert.notEqual(compressed.length,buffer.length);
+});
 
-	test.done();
-}
-
-exports['errors']= function(test) {
-	test.expect(2);
+test('errors', function() {
 	var compressed = compress(Buffer.from(""));
-	test.ok(compressed.length>=0);
-	
+	assert.ok(compressed.length>=0);
+
 	var nothing = uncompress(Buffer.from(" sfsdcfgdfgsdgfdsgdgdsgdfgsdfgsdfgdfgfsfd "));
-	test.ok(nothing==null);
-	
-	test.done();
-}
+	assert.ok(nothing==null);
+});
