@@ -16,6 +16,7 @@
     "nan": "2.x"
   },
   "scripts": {
-    "test": "node --test test/"
+    "pretest": "node-gyp rebuild",
+    "test": "node --test test/*.js"
   }
 }
