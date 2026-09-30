@@ -39,8 +39,7 @@ Both functions could throw exceptions in the following cases:
 
 This is a native addon built with <code>node-gyp</code>, which needs a C++ toolchain, Python 3 and the zlib development files:
 
-* Debian/Ubuntu: <code>sudo apt-get install build-essential python3 zlib1g-dev</code>
-* Fedora/RHEL: <code>sudo dnf install gcc-c++ make python3 zlib-devel</code>
+* Debian/Ubuntu: <code>sudo apt install build-essential zlib1g-dev</code>
 * Alpine: <code>apk add build-base python3 zlib-dev</code>
 * macOS: <code>xcode-select --install</code> (zlib is included)
 
